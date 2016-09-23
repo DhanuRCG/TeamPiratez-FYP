@@ -13,7 +13,7 @@ public class answerGetterTest {
 	public static void main(String args[]) {
 		AnswerGetter ag = new AnswerGetter();
 		
-		String filename = "E:\\eclipse\\data\\testdata1.txt";
+		String filename = "C:\\Users\\Lahiru\\Downloads\\Final Year Project\\Implementation\\Answers\\test.txt";
 		
 		try {
 			GeoRelation georelation = ag.readFile(filename).get(0);

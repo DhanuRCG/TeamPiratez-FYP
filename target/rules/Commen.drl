@@ -7,7 +7,34 @@ import com.sample.GeoRelation;
 import com.engine.CheckingEngine;
 
 
+//Definition of a triangle
+rule "triangle"
+    //include attributes such as "salience" here...
+    when
+        //conditions
+        //There should be 3 different points 
+        $a : Point (type == GeoType.POINT)
+        $b : Point (type == GeoType.POINT && $b != $a)
+        $c : Point (type == GeoType.POINT && $c != $a && $c != $b)
+        
+        //There should be 3 different lines created from above points
+        $ab : Line (type == GeoType.LINE, this.endPoints[0] == $a, this.endPoints[1] == $b) 
+        $bc : Line (type == GeoType.LINE, this.endPoints[0] == $b, this.endPoints[1] == $c) 
+        $ac : Line ((type == GeoType.LINE && this.endPoints[0] == $a && this.endPoints[1] == $c )|| (type == GeoType.LINE && this.endPoints[0] == $c && this.endPoints[1] == $a))
+        
+        //There shoulb be 3 clockwise angles created from above lines 
+        $abc : Angle (type == GeoType.ANGLE, this.directionLeft == $ab, this.directionRight == $bc)
+        $cab : Angle (type == GeoType.ANGLE, this.directionLeft == $ac, this.directionRight == $ab)
+        $bca : Angle (type == GeoType.ANGLE, this.directionLeft == $bc, this.directionRight == $ac)
+    then
+        //actions
+        //Create a triangle and insert it to knowledge base
+        Triangle triangleABC = new Triangle($a,$b,$c);
+        //insert(triangleABC);
+        
+        //System.out.println("Triangle " + $a.name +""+$b.name+""+$c.name+" Created.");
 
+end
 /*rule "sum of two angles on a line is 180 dig"
 when 	
 	$G1 :GeoRelation( 

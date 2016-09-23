@@ -5,8 +5,187 @@ import com.sample.Point;
 import com.sample.Line;
 import com.sample.GeoRelation;
 import com.engine.CheckingEngine;
+import com.sample.Reason;
 
+rule "isosceles triangles"
 
+    when
+        //conditions
+        //There should be two equal lines
+        GeoRelation  ( (firstItem.type == GeoType.LINE)
+    	&& ( secondItem.type == GeoType.LINE )
+    	&& ( relation == Relation.EQUALS ) 
+    	&& ( $lineAC : ((Line)firstItem) )
+    	&& ( $lineBC : ((Line)secondItem) ))
+    	
+    	//There should be a triangle
+    	$ABC : Triangle ( (type == GeoType.TRIANGLE) 
+    	&& ( $line1 : this.lines[0])
+    	&& ( $line2 : this.lines[1])
+    	&& ( $line3 : this.lines[2]) )
+    	
+    	//Those two lines should be sides of the triangle
+    	( (eval ($lineAC.sameItem($line1)))
+    	|| (eval ($lineAC.sameItem($line2)))
+    	|| (eval ($lineAC.sameItem($line3))) )
+    	&& ( (eval ($lineBC.sameItem($line1)))
+    	|| (eval ($lineBC.sameItem($line2)))
+    	|| (eval ($lineBC.sameItem($line3))) )
+    	
+    	
+    then
+        //actions
+        //Take corresponding angles
+        Angle angle1,angle2;
+        if($lineAC.sameItem($line1)){
+        	angle1 = $ABC.angles[1];
+        }
+        else if($lineAC.sameItem($line2)){
+        	angle1 = $ABC.angles[2];
+        }
+        else{
+        	angle1 = $ABC.angles[0];
+        }
+        
+        if($lineBC.sameItem($line1)){
+        	angle2 = $ABC.angles[1];
+        }
+        else if($lineBC.sameItem($line2)){
+        	angle2 = $ABC.angles[2];
+        }
+        else{
+        	angle2 = $ABC.angles[0];
+        }
+        
+        System.out.println(angle1.pointOne.name+""+angle1.middle.name+""+angle1.pointThree.name
+        					+" = "+angle2.pointOne.name+""+angle2.middle.name+""+angle2.pointThree.name
+        					);
+
+end
+
+rule "Exterior angles of a triangle"
+	
+	when
+		//Conditions
+		//There should be a point on a line
+		GeoRelation  ( (firstItem.type == GeoType.LINE)
+    	&& ( secondItem.type == GeoType.POINT )
+    	&& ( relation == Relation.ON_THE_LINE ) 
+    	&& ( $lineBD : ((Line)firstItem) )
+    	&& ( $pointC : ((Point)secondItem) ))
+    	
+    	//Check for existance of two lines which is derived from above line
+    	$lineBC : Line (type == GeoType.LINE, this.endPoints[0] == $lineBD.endPoints[0], this.endPoints[1] == $pointC)
+    	$lineCD : Line (type == GeoType.LINE, this.endPoints[0] == $pointC, this.endPoints[1] == $lineBD.endPoints[1])
+    	
+    	//There should be a triangle
+    	$ABC : Triangle ( (type == GeoType.TRIANGLE) ) 
+    	
+    	//Check whether point on the line is an edge of triangle
+    	( (eval ($pointC.sameItem($ABC.points[0]))) 
+    	|| (eval ($pointC.sameItem($ABC.points[1])))
+    	|| (eval ($pointC.sameItem($ABC.points[2]))) )
+    	
+    	//If one of the end in line also an edge of the triangle, 
+    	//it means that there exist an exterior angle
+    	( (eval ($lineBD.endPoints[0].sameItem($ABC.points[0]))) 
+    	|| (eval ($lineBD.endPoints[0].sameItem($ABC.points[1])))
+    	|| (eval ($lineBD.endPoints[0].sameItem($ABC.points[2])))  
+    	|| (eval ($lineBD.endPoints[1].sameItem($ABC.points[0]))) 
+    	|| (eval ($lineBD.endPoints[1].sameItem($ABC.points[1])))
+    	|| (eval ($lineBD.endPoints[1].sameItem($ABC.points[2]))) )
+    	
+	then
+		//Recognize exterior angle and inner angles accordingly
+		Angle exteriorAngle,innerAngle1,innerAngle2;
+		
+		
+		if($lineBD.endPoints[0].sameItem($ABC.points[0])){
+			//When AB is the extended side up to point D, CBD is the exterior angle
+			if($pointC.sameItem($ABC.points[1])){
+				exteriorAngle = new Angle($ABC.lines[1],$lineCD);
+				innerAngle1 = $ABC.angles[2];
+        		innerAngle2 = $ABC.angles[1];
+			}
+			//When AC is the extended side up to point D, DCB is the exterior angle
+			else{
+				exteriorAngle = new Angle($lineCD,$ABC.lines[1]);
+				innerAngle1 = $ABC.angles[0];
+        		innerAngle2 = $ABC.angles[2];
+			}
+		}
+		else if($lineBD.endPoints[0].sameItem($ABC.points[1])){
+			//When BA is the extended side up to point D, DAC is the exterior angle
+			if($pointC.sameItem($ABC.points[0])){
+				exteriorAngle = new Angle($lineCD,$ABC.lines[2]);
+				innerAngle1 = $ABC.angles[0];
+        		innerAngle2 = $ABC.angles[1];
+			}
+			//When BC is the extended side up to point D, ACD is the exterior angle
+			else{
+				exteriorAngle = new Angle($ABC.lines[2],$lineCD);
+				innerAngle1 = $ABC.angles[0];
+        		innerAngle2 = $ABC.angles[2];
+			}
+		}
+		else if($lineBD.endPoints[0].sameItem($ABC.points[2])){
+			//When CA is the extended side up to point D, BAD is the exterior angle
+			if($pointC.sameItem($ABC.points[0])){
+				exteriorAngle = new Angle($ABC.lines[0],$lineCD);
+				innerAngle1 = $ABC.angles[0];
+        		innerAngle2 = $ABC.angles[1];
+			}
+			//When CB is the extended side up to point D, DBA is the exterior angle
+			else{
+				exteriorAngle = new Angle($lineCD,$ABC.lines[0]);
+				innerAngle1 = $ABC.angles[1];
+        		innerAngle2 = $ABC.angles[2];
+			}
+		}
+		//Same as above only difference is sides are extended up to point B
+		else if($lineBD.endPoints[1].sameItem($ABC.points[0])){
+			if($pointC.sameItem($ABC.points[1])){
+				exteriorAngle = new Angle($ABC.lines[1],$lineBC);
+				innerAngle1 = $ABC.angles[2];
+        		innerAngle2 = $ABC.angles[1];
+			}
+			else{
+				exteriorAngle = new Angle($lineBC,$ABC.lines[1]);
+				innerAngle1 = $ABC.angles[0];
+        		innerAngle2 = $ABC.angles[2];
+			}
+		}
+		else if($lineBD.endPoints[1].sameItem($ABC.points[1])){
+			if($pointC.sameItem($ABC.points[0])){
+				exteriorAngle = new Angle($lineBC,$ABC.lines[2]);
+				innerAngle1 = $ABC.angles[0];
+        		innerAngle2 = $ABC.angles[1];
+			}
+			else{
+				exteriorAngle = new Angle($ABC.lines[2],$lineBC);
+				innerAngle1 = $ABC.angles[0];
+        		innerAngle2 = $ABC.angles[2];
+			}
+		}
+		else{
+			if($pointC.sameItem($ABC.points[0])){
+				exteriorAngle = new Angle($ABC.lines[0],$lineBC);
+				innerAngle1 = $ABC.angles[0];
+        		innerAngle2 = $ABC.angles[1];
+			}
+			else{
+				exteriorAngle = new Angle($lineBC,$ABC.lines[0]);
+				innerAngle1 = $ABC.angles[1];
+        		innerAngle2 = $ABC.angles[2];
+			}
+		}
+		
+		System.out.println("Exterior Angle "+exteriorAngle.pointOne.name+""+exteriorAngle.middle.name+""+exteriorAngle.pointThree.name
+						+ " = " + "Inner angles ( "	
+						+innerAngle1.pointOne.name+""+innerAngle1.middle.name+""+innerAngle1.pointThree.name 
+						+" + "+innerAngle2.pointOne.name+""+innerAngle2.middle.name+""+innerAngle2.pointThree.name+ " )"
+						);
+end
 
 rule " test"
 
@@ -53,13 +232,11 @@ rule " alternate angles between parallel line"
     
     then
    	 
-   	 GeoRelation parrallelAngleEqual = new GeoRelation($angle1,$angle2,Relation.EQUALS);
+   	 GeoRelation parrallelAngleEqual = new GeoRelation($angle1,$angle2,Relation.EQUALS,Reason.ALTERNATE_ANGLES);
 //   	 insert(parrallelAngleEqual);
    	// System.out.println($angle1.pointOne.name+""+$angle1.middle.name+""+$angle1.pointThree.name+"equal alternate angles"+
    	 //$angle2.pointOne.name+""+$angle2.middle.name+""+$angle2.pointThree.name);
    	 CheckingEngine.inferedKnowledge.insertGeoRelation(parrallelAngleEqual);
-   	 
-   	 
    	 
     end
 query "getObjectsOfAngle"
@@ -149,4 +326,5 @@ rule " opersite angles between parallel line"
          
         
     end
+    
     
