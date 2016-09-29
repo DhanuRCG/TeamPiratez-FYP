@@ -149,6 +149,10 @@ public class CheckingEngine {
 			}
 	
 		}
+		//Here we have to give marks
+		//We have to compare student answers with marking scheme
+		//Evaluate whether they have given correct reasoning
+		
 		answerHolder.printMarkedAnswer();
 	}
 
